@@ -1,0 +1,4 @@
+environment.inc
+ansible/servers.yaml
+*.pyc
+.idea
