@@ -1,0 +1,35 @@
+1. The spark ansible scripts are used to set up a spark benchmark environment in OpenStack VMs. The scripts are tested on Centos 7.6.
+
+2. On the master node, install depedencies
+    cd aep_benchmark
+    pip install -r requirements.txt
+
+3. copy servers and spark.yaml under ansible directory and modify hosts info according to your cluster
+
+4. before running ansible scripts make sure the master node has ability to connect all the hosts via ssh 
+
+5. execute ansible playbook to set up environment
+    ansible-playbook -i servers spark.yaml
+
+6. start hdfs and yarn services
+    source /etc/profile.d/sparkenv.sh
+    hdfs namenode -format
+    .~/spark_sql/hadoop-2.7.5/sbin/start-dfs.sh
+    .~/spark_sql/hadoop-2.7.5/sbin/start-yarn.sh
+
+7. verify all hdfs and yarn services are available by jps
+
+8. modify configuration for generating test data 
+    cd ~/spark_sql/OAP-TPCDS-TOOL
+    edit scripts/tool.conf to set appropriate DATA_SCALE
+    edit scripts/genData.scala, replace "tables.genData(rootDir, format, true, false, true, false, false, "", 20)"
+    to "tables.genData(rootDir, format, true, false, true, false, false, "", 2500)"
+    ./scripts/run_gen_data.sh
+
+9. start spark thrift server
+    There are two thrift server scripts under sripts directory, spark_thrift_server_yarn_with_DCPMM.sh for PMEM and spark_thrift_server_yarn_with_DCPMM.sh for DRAM.
+    You may need to change some parameters to match your clusters.
+    ./scripts/spark_thrift_server_yarn_with_DCPMM.sh start
+
+10. run tpcds queries
+    ./scripts/run_tpcds.sh

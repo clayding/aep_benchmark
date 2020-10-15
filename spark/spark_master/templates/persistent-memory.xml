@@ -1,0 +1,7 @@
+<persistentMemoryPool>
+  <!--The numa id-->
+  <numanode id="0">
+    <!--The initial path for Intel Optane DC persistent memory-->
+    <initialPath>{{ pmem_path }}</initialPath>
+  </numanode>
+</persistentMemoryPool>

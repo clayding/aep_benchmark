@@ -1,0 +1,116 @@
+---
+- name: Build hosts file
+  lineinfile:
+    dest: /etc/hosts
+    regexp: "{{ item.ip }}"
+    line: "{{ item.ip }} {{ item.hostname }}"
+    state: present
+  with_items: "{{ nodes }}"
+  become: yes
+
+- name: create working dir
+  file:
+    path: "{{ workplace }}"
+    state: directory
+    owner: centos
+    group: centos
+    mode: 0750
+
+- name: copy jdk archive
+  copy:
+    src: jdk1.8.0_161.tar.gz
+    dest: "{{ workplace }}/jdk1.8.0_161.tar.gz"
+
+- name: extract jdk
+  unarchive:
+    src: "{{ workplace }}/jdk1.8.0_161.tar.gz"
+    dest: "{{ workplace }}"
+    remote_src: yes
+
+- name: download hadoop package
+  get_url:
+    url:  https://archive.apache.org/dist/hadoop/common/hadoop-2.7.5/hadoop-2.7.5.tar.gz
+    dest: "{{ workplace }}"
+
+- name: extract hadoop
+  unarchive:
+    src: "{{ workplace }}/hadoop-2.7.5.tar.gz"
+    dest: "{{ workplace }}"
+    remote_src: yes
+
+- name: add config files
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  with_items:
+    - {src: "core-site.xml", dest: "{{ workplace }}/hadoop-2.7.5/etc/hadoop/core-site.xml"}
+    - {src: "hdfs-site.xml", dest: "{{ workplace }}/hadoop-2.7.5/etc/hadoop/hdfs-site.xml"}
+    - {src: "yarn-site.xml", dest: "{{ workplace }}/hadoop-2.7.5/etc/hadoop/yarn-site.xml"}
+
+- name: install dependencies
+  yum:
+    name:
+      - epel-release
+      - ndctl
+      - ndctl-devel
+      - git
+      - autoconf
+      - automake
+      - gcc-c++
+      - libtool
+      - numactl-devel
+      - numactl
+      - unzip
+      - cmake
+      - rpm-build
+  become: yes
+
+- name: install cmake3
+  yum:
+    name:
+      - cmake3
+  become: yes
+
+- name: download and compile libvmemcache
+  shell: |
+    git clone https://github.com/pmem/vmemcache.git
+    cd vmemcache
+    mkdir build
+    cd build
+    cmake3 .. -DCMAKE_INSTALL_PREFIX=/usr -DCPACK_GENERATOR=rpm
+    make package
+    sudo rpm -e libvmemcache
+    sudo rpm -i libvmemcache*.rpm
+  args:
+    chdir: "{{ workplace }}"
+
+- name: download and compile memkind
+  shell: |
+    git clone https://github.com/memkind/memkind.git 
+    cd memkind
+    git checkout tags/v1.10.0 -b v1.10.0
+    make clean
+    rm ./jemalloc/obj/lib/libjemalloc_pic.a configure Makefile
+    ./build.sh
+    sudo make install
+    sudo cp -r /usr/local/lib/* /lib64/
+  args:
+    chdir: "{{ workplace }}"
+
+- name: add env file
+  template:
+    src: sparkenv.sh
+    dest: "/etc/profile.d/sparkenv.sh"
+  become: yes
+
+- name: get tpcds tool
+  get_url:
+    url: https://github.com/Intel-bigdata/OAP/releases/download/v0.6.1-spark-2.4.4/OAP-TPCDS-TOOL.zip
+    dest: "{{ workplace }}/OAP-TPCDS-TOOL.zip"
+
+- name: extract tpcds tool
+  unarchive:
+    src: "{{ workplace }}/OAP-TPCDS-TOOL.zip"
+    dest: "{{ workplace }}"
+    remote_src: yes
+  

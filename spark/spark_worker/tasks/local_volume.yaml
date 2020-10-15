@@ -1,0 +1,16 @@
+---
+- name: remove previous data directory
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ local_volumes }}"
+  ignore_errors: true
+
+- name: create data directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: centos
+    group: centos
+    mode: 0750
+  loop: "{{ local_volumes }}"

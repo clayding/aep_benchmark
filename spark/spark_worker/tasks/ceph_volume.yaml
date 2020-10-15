@@ -1,0 +1,31 @@
+---
+- name: unmount volumes if needed
+  mount:
+    src: "{{ item[0] }}"
+    path: "{{ item[1] }}"
+    state: unmounted
+  loop: "{{ ceph_volumes|zip(local_volumes)|list }}"
+
+- name: create filesystem on openstack volumes
+  filesystem:
+    fstype: ext4
+    dev: "{{ item }}"
+    force: yes
+  with_items: "{{ ceph_volumes }}"
+
+- name: mount volumes again
+  mount:
+    src: "{{ item[0] }}"
+    path: "{{ item[1] }}"
+    state: mounted
+    fstype: ext4
+  loop: "{{ ceph_volumes|zip(local_volumes)|list }}"
+
+- name: set permission for local volumes
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: centos
+    group: centos
+    mode: 0750
+  loop: "{{ local_volumes }}"

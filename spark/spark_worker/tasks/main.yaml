@@ -1,0 +1,66 @@
+---
+- name: unmount volumes first
+  mount:
+    path: "{{ item }}"
+    state: unmounted
+  loop: "{{ local_directories }}"
+  when: use_openstack_volume
+  become: yes
+
+- name: create filesystem on openstack volumes
+  filesystem:
+    fstype: ext4
+    dev: "{{ item }}"
+  with_items: "{{ openstack_volumes }}"
+  when: use_openstack_volume
+  become: yes
+
+- name: mount volumes
+  mount:
+    src: "{{ item[0] }}"
+    path: "{{ item[1] }}"
+    state: mounted
+    fstype: ext4
+  loop: "{{ openstack_volumes|zip(local_directories)|list }}"
+  when: use_openstack_volume
+  become: yes
+
+- name: change directory permissions
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: centos
+    group: centos
+    mode: 0750
+  loop: "{{ local_directories }}"
+  become: yes
+
+- name: remove previous hdfs directory
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop: "{{ local_directories }}"
+  ignore_errors: true
+  when: not use_openstack_volume
+
+- name: create hdfs directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: centos
+    group: centos
+    mode: 0750
+  loop: "{{ local_directories }}"
+  when: not use_openstack_volume
+
+- name: pmem provision
+  shell: |
+    ndctl disable-namespace namespace0.0
+    ndctl create-namespace -e namespace0.0 -m fsdax
+    ndctl enable-namespace namespace0.0
+    mkfs.ext4 /dev/pmem0
+    mkdir {{ pmem_path }}
+    mount -o dax /dev/pmem0 {{ pmem_path }}
+    chown -R centos:centos {{ pmem_path }}
+  ignore_errors: True
+  become: yes

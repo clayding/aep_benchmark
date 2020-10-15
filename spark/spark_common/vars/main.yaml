@@ -1,0 +1,3 @@
+---
+workplace: /home/centos/spark-sql
+datadir: ['/mnt/DP_disk1', '/mnt/DP_disk2', '/mnt/DP_disk3', '/mnt/DP_disk4', '/mnt/DP_disk5', '/mnt/DP_disk6', '/mnt/DP_disk7', '/mnt/DP_disk8']

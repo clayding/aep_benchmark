@@ -1,0 +1,15 @@
+---
+- hosts: worker 
+  remote_user: centos
+  any_errors_fatal: true
+  roles: 
+    - role: spark_worker
+    - role: spark_common
+
+- hosts: master
+  remote_user: centos
+  any_errors_fatal: true
+  roles:
+    - role: spark_common
+    - role: spark_master
+#      debugger: always

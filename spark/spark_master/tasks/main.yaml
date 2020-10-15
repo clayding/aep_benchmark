@@ -1,0 +1,93 @@
+---
+- name: add slaves
+  template:
+    src: slaves
+    dest: "{{ workplace }}/hadoop-2.7.5/etc/hadoop/slaves"
+    owner: centos
+    group: centos
+    mode: 0600
+
+- name: get spark package
+  get_url:
+    url:  https://archive.apache.org/dist/spark/spark-2.4.4/spark-2.4.4-bin-hadoop2.7.tgz
+    dest: "{{ workplace }}/spark-2.4.4-bin-hadoop2.7.tgz"
+
+- name: extract spark
+  unarchive:
+    src: "{{ workplace }}/spark-2.4.4-bin-hadoop2.7.tgz"
+    dest: "{{ workplace }}"
+    remote_src: yes
+
+- name: download maven
+  get_url:
+    url: https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz
+    dest: "{{ workplace}}/apache-maven-3.6.3-bin.tar.gz"
+
+- name: extract maven
+  unarchive:
+    src: "{{ workplace }}/apache-maven-3.6.3-bin.tar.gz"
+    dest: "{{ workplace }}"
+    remote_src: yes
+
+- name: remove system maven
+  yum:
+    name: maven
+    state: absent
+  become: yes
+
+- name: add env file
+  template:
+    src: sparkenv.sh
+    dest: "/etc/profile.d/sparkenv.sh"
+  become: yes
+
+- name: download and compile OAP
+  shell: |
+    source /etc/profile.d/sparkenv.sh
+    git clone https://github.com/Intel-bigdata/OAP.git
+    cd OAP
+    git checkout tags/v0.7.0-spark-2.4.4 -b v0.7.0-spark-2.4.4
+    mvn clean -q -Ppersistent-memory -Pvmemcache -DskipTests package
+    cp target/oap-0.7.0-with-spark-2.4.4.jar {{ workplace }}/
+  args:
+    chdir: "{{ workplace }}"
+
+- name: add spark default conf
+  template:
+    src: spark-defaults.conf
+    dest: "{{ workplace }}/spark-2.4.4-bin-hadoop2.7/conf/spark-defaults.conf"
+    owner: centos
+    group: centos
+    mode: 0600
+
+- name: overwrite tpcds conf
+  template:
+    src: tool.conf
+    dest: "{{ workplace }}/OAP-TPCDS-TOOL/scripts/tool.conf"
+    owner: centos
+    group: centos
+    mode: 0600
+
+- name: add DCPMM thrift server script
+  template:
+    src: spark_thrift_server_yarn_with_DCPMM.sh
+    dest: "{{ workplace }}/OAP-TPCDS-TOOL/scripts/spark_thrift_server_yarn_with_DCPMM.sh"
+    owner: centos
+    group: centos
+    mode: 0700
+
+- name: add DRAM thrift server script
+  template:
+    src: spark_thrift_server_yarn_with_DRAM.sh
+    dest: "{{ workplace }}/OAP-TPCDS-TOOL/scripts/spark_thrift_server_yarn_with_DRAM.sh"
+    owner: centos
+    group: centos
+    mode: 0700
+
+- name: add DCPMM conf
+  template:
+    src: persistent-memory.xml
+    dest: "{{ workplace }}/spark-2.4.4-bin-hadoop2.7/conf/persistent-memory.xml"
+    owner: centos
+    group: centos
+    mode: 0600

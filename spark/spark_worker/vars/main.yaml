@@ -1,0 +1,5 @@
+---
+openstack_volumes: ['/dev/vdb', '/dev/vdc', '/dev/vdd', '/dev/vde', '/dev/vdf', '/dev/vdg', '/dev/vdh', '/dev/vdi']
+local_directories: ['/mnt/DP_disk1', '/mnt/DP_disk2', '/mnt/DP_disk3', '/mnt/DP_disk4', '/mnt/DP_disk5', '/mnt/DP_disk6', '/mnt/DP_disk7', '/mnt/DP_disk8']
+use_openstack_volume: yes
+pmem_path: /mnt/pmem0

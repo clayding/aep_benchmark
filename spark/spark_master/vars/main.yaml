@@ -1,0 +1,3 @@
+---
+workplace: /home/centos/spark-sql
+pmem_path: /mnt/pmem0
