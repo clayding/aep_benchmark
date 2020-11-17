@@ -1,0 +1,42 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rbd-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: csi-rbd-sc
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: redis-aof
+spec:
+  containers:
+    - name: redis-aof
+      image: pmem-redis
+      args: ["no"]
+      ports:
+      - containerPort: 6379
+      resources:
+        limits:
+          cpu: "1000m"
+          memory: "16Gi"
+        requests:
+          cpu: "1000m"
+          memory: "16Gi"
+      volumeMounts:
+      - mountPath: "/ceph"
+        name: ceph-csi-volume
+  volumes:
+  - name: ceph-csi-volume
+    persistentVolumeClaim:
+      claimName: rbd-pvc
+  nodeSelector:
+    kubernetes.io/hostname: node3
+
