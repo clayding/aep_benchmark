@@ -18,6 +18,7 @@ spec:
   containers:
     - name: redis-with-pba 
       image: pmem-redis
+      imagePullPolicy: Never
       args: ["yes"]
       ports:
       - containerPort: 6379
