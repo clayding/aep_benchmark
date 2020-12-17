@@ -20,6 +20,7 @@ spec:
   containers:
     - name: redis-aof
       image: pmem-redis
+      imagePullPolicy: Never
       args: ["no"]
       ports:
       - containerPort: 6379
